@@ -65,6 +65,7 @@ export function ExamRoom({
           aria-label="Your essay"
           value={essay}
           readOnly={timeUp}
+          maxLength={20000}
           onChange={(e) => setEssay(e.target.value)}
           placeholder="Start typing your essay here…"
           className="min-h-64 flex-1"
