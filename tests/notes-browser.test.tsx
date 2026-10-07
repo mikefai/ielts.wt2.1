@@ -27,3 +27,20 @@ describe("NotesBrowser", () => {
     expect(screen.getByText('No notes match "zzz".')).toBeInTheDocument();
   });
 });
+
+describe("NotesBrowser topic modules", () => {
+  it("lists the five topic modules and reveals vocabulary and the sample paragraph", async () => {
+    render(<NotesBrowser />);
+    const triggers = screen.getAllByRole("button", { name: /^Topic \d:/ });
+    expect(triggers).toHaveLength(5);
+    await userEvent.click(screen.getByRole("button", { name: /Topic 1: Crime/ }));
+    expect(await screen.findByText("recidivism")).toBeVisible();
+    expect(screen.getByText(/Admittedly, severe sentences can act as a powerful deterrent/)).toBeVisible();
+  });
+  it("searches vocabulary words across modules", async () => {
+    render(<NotesBrowser />);
+    await userEvent.type(screen.getByRole("searchbox", { name: "Search notes" }), "austerity");
+    expect(screen.getAllByRole("button", { name: /^Topic \d:/ })).toHaveLength(1);
+    expect(screen.queryAllByRole("button", { name: /^Essay Type/ })).toHaveLength(0);
+  });
+});
