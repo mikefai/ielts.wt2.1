@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { EssayGuideView } from "@/components/notes/essay-guide";
+import { ESSAY_GUIDES } from "@/lib/essay-guides-data";
 import { ESSAY_TYPES } from "@/lib/notes-data";
 import { filterEssayTypes, filterTopicModules } from "@/lib/notes-search";
 import { TOPIC_MODULES } from "@/lib/topic-modules-data";
@@ -55,6 +57,7 @@ export function NotesBrowser() {
                         <p className="italic">{t.templatePhrase}</p>
                       </blockquote>
                     )}
+                    {ESSAY_GUIDES[t.id] && <EssayGuideView guide={ESSAY_GUIDES[t.id]} />}
                   </div>
                 </AccordionContent>
               </AccordionItem>

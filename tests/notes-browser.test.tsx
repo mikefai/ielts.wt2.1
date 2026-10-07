@@ -44,3 +44,20 @@ describe("NotesBrowser topic modules", () => {
     expect(screen.queryAllByRole("button", { name: /^Essay Type/ })).toHaveLength(0);
   });
 });
+
+describe("NotesBrowser writing guides", () => {
+  it("teaches paragraph and sentence roles inside an opened essay type", async () => {
+    render(<NotesBrowser />);
+    await userEvent.click(screen.getByRole("button", { name: /Essay Type 1/ }));
+    expect(await screen.findByRole("heading", { name: "How to write each paragraph" })).toBeVisible();
+    expect(screen.getAllByRole("region", { name: /guide$/ })).toHaveLength(4);
+    expect(screen.getByText("Thesis (clear position)")).toBeVisible();
+    expect(screen.getByText(/I firmly agree with this view/)).toBeVisible();
+  });
+  it("shows a guide for the other essay types too", async () => {
+    render(<NotesBrowser />);
+    await userEvent.click(screen.getByRole("button", { name: /Essay Type 5/ }));
+    expect(await screen.findByRole("heading", { name: "How to write each paragraph" })).toBeVisible();
+    expect(screen.getAllByRole("region", { name: /guide$/ })).toHaveLength(4);
+  });
+});
