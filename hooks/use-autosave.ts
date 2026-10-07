@@ -17,7 +17,18 @@ export function useAutosave(
   });
 
   useEffect(() => {
-    const id = setInterval(() => saveRef.current(valueRef.current), intervalMs);
-    return () => clearInterval(id);
+    const flush = () => saveRef.current(valueRef.current);
+    const id = setInterval(flush, intervalMs);
+    // Also flush when the page is reloaded/closed or the tab is hidden, so a reload never loses typing.
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [intervalMs]);
 }

@@ -61,3 +61,39 @@ describe("ExamRoom", () => {
     expect(screen.getByRole("button", { name: /Submit essay|Submitting/ })).toBeDisabled();
   });
 });
+
+describe("ExamRoom robustness", () => {
+  it("disables submit until something is written", () => {
+    render(<ExamRoom prompt={prompt} onSubmit={() => {}} />);
+    const submit = screen.getByRole("button", { name: "Submit essay" });
+    expect(submit).toBeDisabled();
+    fireEvent.change(screen.getByRole("textbox", { name: "Your essay" }), { target: { value: "   " } });
+    expect(submit).toBeDisabled();
+    fireEvent.change(screen.getByRole("textbox", { name: "Your essay" }), { target: { value: "word" } });
+    expect(submit).toBeEnabled();
+  });
+
+  it("lets the student start over after time is up (e.g. an abandoned old session)", () => {
+    saveSession({ promptId: prompt.id, startedAt: NOW - 3 * 24 * 3600_000, essay: "old essay" });
+    render(<ExamRoom prompt={prompt} onSubmit={() => {}} />);
+    expect(screen.getByText("Time is up — submit your essay.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Start over" }));
+    expect(screen.getByRole("textbox", { name: "Your essay" })).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "Your essay" })).not.toHaveAttribute("readonly");
+    expect(screen.getByRole("timer")).toHaveTextContent("40:00");
+    expect(loadSession(prompt.id)).toMatchObject({ startedAt: NOW, essay: "" });
+    expect(screen.queryByText("Time is up — submit your essay.")).not.toBeInTheDocument();
+    // and the new attempt expires normally
+    act(() => vi.advanceTimersByTime(40 * 60 * 1000));
+    expect(screen.getByText("Time is up — submit your essay.")).toBeInTheDocument();
+  });
+
+  it("saves the latest essay when the page is hidden or reloaded, before the 20s tick", () => {
+    render(<ExamRoom prompt={prompt} onSubmit={() => {}} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Your essay" }), { target: { value: "typed just now" } });
+    act(() => {
+      window.dispatchEvent(new Event("pagehide"));
+    });
+    expect(loadSession(prompt.id)?.essay).toBe("typed just now");
+  });
+});

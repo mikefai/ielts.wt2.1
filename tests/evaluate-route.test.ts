@@ -31,3 +31,16 @@ describe("POST /api/evaluate", () => {
     expect(res.status).toBe(413);
   });
 });
+
+describe("POST /api/evaluate body-size guard", () => {
+  it("rejects an oversized declared Content-Length with 413 before parsing", async () => {
+    const res = await POST(
+      new Request("http://localhost/api/evaluate", {
+        method: "POST",
+        headers: { "content-length": String(5_000_000) },
+        body: JSON.stringify({ essay: "short" }),
+      }),
+    );
+    expect(res.status).toBe(413);
+  });
+});
