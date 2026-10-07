@@ -61,3 +61,53 @@ describe("NotesBrowser writing guides", () => {
     expect(screen.getAllByRole("region", { name: /guide$/ })).toHaveLength(4);
   });
 });
+
+describe("NotesBrowser language switch", () => {
+  it("defaults to English and offers English / Türkçe / EN + TR", () => {
+    render(<NotesBrowser />);
+    expect(screen.getByRole("button", { name: "English" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Türkçe" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "EN + TR" })).toBeInTheDocument();
+  });
+
+  it("shows Turkish notes (explanations translated, English model sentences kept) and remembers the choice", async () => {
+    render(<NotesBrowser />);
+    await userEvent.click(screen.getByRole("button", { name: "Türkçe" }));
+    expect(localStorage.getItem("ielts-w2:notes-lang")).toBe("tr");
+    expect(screen.getByText("Kompozisyon Türü 1: Katılıyor / Katılmıyor (Görüş)")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Kompozisyon Türü 1/ }));
+    expect(await screen.findByRole("heading", { name: "Her paragraf nasıl yazılır" })).toBeVisible();
+    expect(screen.getByText("Ana tez (net tutum)")).toBeVisible();
+    // English example sentences stay English: that is what students write in the exam
+    expect(screen.getByText(/I firmly agree with this view/)).toBeVisible();
+  });
+
+  it("restores a saved Turkish preference on load", async () => {
+    localStorage.setItem("ielts-w2:notes-lang", "tr");
+    render(<NotesBrowser />);
+    expect(await screen.findByText("Kompozisyon Türü 2: Tartışma (Her İki Görüşü Tartış)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Türkçe" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("shows English and Turkish together in EN + TR mode", async () => {
+    render(<NotesBrowser />);
+    await userEvent.click(screen.getByRole("button", { name: "EN + TR" }));
+    expect(screen.getByText("Essay Type 1: Agree / Disagree (Opinion)")).toBeInTheDocument();
+    expect(screen.getByText("Kompozisyon Türü 1: Katılıyor / Katılmıyor (Görüş)")).toBeInTheDocument();
+  });
+
+  it("searches Turkish text when Turkish is visible", async () => {
+    render(<NotesBrowser />);
+    await userEvent.click(screen.getByRole("button", { name: "Türkçe" }));
+    await userEvent.type(screen.getByRole("searchbox", { name: "Notlarda ara" }), "dezavantajlar");
+    expect(screen.getAllByRole("button", { name: /^Kompozisyon Türü/ })).toHaveLength(1);
+  });
+
+  it("translates topic modules: definitions in Turkish, vocabulary words in English", async () => {
+    render(<NotesBrowser />);
+    await userEvent.click(screen.getByRole("button", { name: "Türkçe" }));
+    await userEvent.click(screen.getByRole("button", { name: /Konu 1: Suç/ }));
+    expect(await screen.findByText("recidivism")).toBeVisible();
+    expect(screen.getByText(/Hüküm giymiş bir suçlunun serbest kaldıktan sonra yeniden suç işleme eğilimi/)).toBeVisible();
+  });
+});
